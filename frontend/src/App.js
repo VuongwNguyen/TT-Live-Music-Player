@@ -36,8 +36,8 @@ function App() {
   useEffect(() => {
     // Initialize socket connection
     const serverUrl = process.env.NODE_ENV === 'production' 
-      ? window.location.origin 
-      : 'http://localhost:5000';
+      ? process.env.REACT_APP_SERVER_URL || window.location.origin 
+      : process.env.REACT_APP_SERVER_URL_DEV || 'http://localhost:5000';
     const newSocket = io(serverUrl);
     setSocket(newSocket);
 

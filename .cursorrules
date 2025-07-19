@@ -1,0 +1,41 @@
+{
+  "$schema": "https://app.cursor.sh/schema/cursorrules.json",
+  "language": ["javascript", "typescript", "tsx", "jsx"],
+  "rules": {
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "printWidth": 100,
+    "arrowParens": "always",
+    "endOfLine": "lf",
+    "noConsole": "warn",
+    "noDebugger": "error",
+    "noUnusedVars": {
+      "vars": "all",
+      "args": "after-used",
+      "ignoreRestSiblings": true,
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    },
+    "eqeqeq": true,
+    "preferConst": true,
+    "noVar": true,
+    "preferArrowFunctions": true,
+    "importOrder": [
+      "builtin",
+      "external",
+      "internal",
+      "parent",
+      "sibling",
+      "index"
+    ],
+    "importOrderAlphabetize": true,
+    "importOrderNewlinesBetween": "always",
+    "noExplicitAny": "warn",
+    "noNonNullAssertion": "warn",
+    "explicitFunctionReturnType": false,
+    "jsxSingleQuote": true,
+    "jsxBracketSameLine": false
+  }
+}

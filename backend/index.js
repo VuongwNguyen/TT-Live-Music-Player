@@ -15,15 +15,20 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ["https://your-app-name.vercel.app", "https://your-app-name.vercel.app:443"]
-      : "http://localhost:3000",
+      ? process.env.SOCKET_CORS_ORIGIN_PROD?.split(',') || ["https://your-app-name.vercel.app"]
+      : process.env.SOCKET_CORS_ORIGIN_DEV || "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.CORS_ORIGIN_PROD?.split(',') || ["https://your-app-name.vercel.app"]
+    : process.env.CORS_ORIGIN_DEV || "http://localhost:3000",
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
