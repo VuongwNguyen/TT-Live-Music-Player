@@ -1,13 +1,13 @@
 # 🎵 TikTok Live Music Player
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/Yinnz/tiktok-live-music-app)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/VuongwNguyen/tiktok-live-music-app)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 > A real-time music streaming application that transforms TikTok Live interactions into an automated DJ experience. Users can request songs through TikTok Live chat, and the app automatically finds and plays them via YouTube with comprehensive live analytics and modern UI.
 
-**Created by [Yinnz](https://github.com/Yinnz) 👨‍💻**
+**Created by [Yinnz](https://github.com/VuongwNguyen) 👨‍💻**
 
 ---
 
@@ -485,11 +485,11 @@ If you encounter any issues or have questions:
 
 <div align="center">
 
-**Built with ❤️ by [Yinnz](https://github.com/Yinnz)**
+**Built with ❤️ by [Yinnz](https://github.com/VuongwNguyen)**
 
 *Transforming TikTok Live streaming with seamless music requests and comprehensive analytics*
 
-[⭐ Star this project](https://github.com/Yinnz/tiktok-live-music-app) • [🐛 Report Bug](https://github.com/Yinnz/tiktok-live-music-app/issues) • [💡 Request Feature](https://github.com/Yinnz/tiktok-live-music-app/issues)
+[⭐ Star this project](https://github.com/VuongwNguyen/tiktok-live-music-app) • [🐛 Report Bug](https://github.com/VuongwNguyen/tiktok-live-music-app/issues) • [💡 Request Feature](https://github.com/VuongwNguyen/tiktok-live-music-app/issues)
 
 **Version 2.0.0** - Now with Live Analytics Dashboard and Modern UI
 
