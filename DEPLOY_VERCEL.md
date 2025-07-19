@@ -62,9 +62,9 @@ PORT=5000
 
 ### **2.4 Build Settings**
 
-#### **Build Command**: `npm run vercel-build`
+#### **Build Command**: `yarn vercel-build`
 #### **Output Directory**: `frontend/build`
-#### **Install Command**: `npm run install-all`
+#### **Install Command**: `yarn install-deps`
 
 ### **2.5 Deploy**
 
@@ -129,8 +129,8 @@ Your app will be available at:
 ```bash
 # Check build logs in Vercel dashboard
 # Common fixes:
-npm run install-all  # Install all dependencies
-npm run build        # Build frontend
+yarn install-deps  # Install all dependencies
+yarn build        # Build frontend
 ```
 
 #### **❌ Socket Connection Fails**
