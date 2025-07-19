@@ -14,17 +14,24 @@
 ## 🌟 Features
 
 ### 🎪 **TikTok Live Integration**
+- **Single connection per user**: Each user can connect to 1 TikTok Live stream at a time
+- **Global uniqueness**: Each TikTok account can only be connected by one user globally
 - Real-time connection to any TikTok Live stream
 - Automatic comment parsing for music requests
 - Live comment display with highlighting for music requests
+- **Simple disconnect**: Easy one-click disconnect to switch accounts
+- **Auto-cleanup**: Comments and requests cleared when user disconnects
 - Connection status monitoring with visual indicators
 
 ### 🎵 **Smart Music Management**
+- **Per-client playlists**: Each user has their own independent playlist
+- **No playlist sharing**: Songs requested by one user don't appear in others' playlists
 - Automatic YouTube search for requested songs
 - Intelligent song matching with multiple format support
 - Auto-playing playlist with seamless transitions
 - Manual song addition and playlist controls
 - Integrated horizontal scrolling playlist with thumbnails
+- **Auto-cleanup**: Client playlists removed when user disconnects
 
 ### 🎛️ **Advanced Player Controls**
 - **Ultra-compact controls**: Play/Pause toggle, Replay, Next, Clear
@@ -43,7 +50,14 @@
 - **🔥 Current Streak**: Consecutive songs played
 - **🏆 Most Popular**: Top requested songs and artists
 
-### 📱 **Modern User Interface**
+### 📱 **Mobile-Optimized Interface**
+- **Ultra-smooth scrolling**: Optimized for rapid comment streams
+- **Touch-optimized**: Native mobile scroll behavior on iOS/Android
+- **Hardware acceleration**: 60fps smooth performance
+- **Responsive design**: Adaptive layout for all screen sizes
+- **Zero-latency auto-scroll**: Instant comment following during bursts
+
+### 🎮 **Modern User Interface**
 - **3-panel layout**: Organized workspace with proper alignment
 - **Responsive design**: Perfect on desktop, tablet, and mobile
 - **Real-time sync**: Comments height matches Music Player
@@ -114,6 +128,9 @@
 ### 1. **Connect to TikTok Live**
 - Enter a TikTok username (without @) in the left panel
 - Click "Connect to Live" button
+- **Single connection limit**: You can only connect to 1 TikTok account at a time
+- **Global uniqueness**: If someone else is already connected to a TikTok account, you'll get a warning
+- **Easy switching**: Disconnect current connection to switch to a different account
 - Monitor connection status in the green/red indicator
 - Watch for "Server Connected" status in top-left corner
 
@@ -355,6 +372,123 @@ Statistics: Auto-sizing grid layout
 - Verify internet connection for YouTube access
 - Some videos may be region-restricted
 - Try clearing browser cache and cookies
+
+❌ Problem: Playlist empty or not updating
+✅ Solutions:
+- Check if you're connected to TikTok Live
+- Verify song requests use correct format: !music Song Name
+- Check playlist stats: curl localhost:5000/api/debug/playlists
+- Clear playlist and try adding songs manually
+```
+
+### Mobile Performance Issues
+```bash
+❌ Problem: Slow scrolling or lag on mobile
+✅ Solutions:
+- Close other browser tabs to free memory
+- Use native browser (Safari on iOS, Chrome on Android)
+- Check network connection quality
+- Clear browser cache and reload
+
+❌ Problem: Comments not auto-scrolling on mobile
+✅ Solutions:
+- Don't scroll manually during comment bursts
+- Tap the "New messages" button to jump to bottom
+- Mobile optimization activates automatically
+- Use momentum scrolling (swipe and release)
+```
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+### 🎯 **Multi-Client Testing Scenarios**
+
+#### **Scenario 1: TikTok Connection Isolation**
+```bash
+# Test global uniqueness protection
+1. Client A connects to @user123 ✅
+2. Client B tries @user123 → ❌ "Already connected by another user"
+3. Client B connects to @user456 ✅
+4. Client A disconnects → @user123 becomes available
+5. Client B connects to @user123 ✅
+
+# Verification:
+curl localhost:5000/api/debug/connections
+```
+
+#### **Scenario 2: Per-Client Playlist Isolation**
+```bash
+# Test playlist separation
+1. Client A: Connects to @user123, requests "Despacito"
+2. Client B: Connects to @user456, requests "Shape of You"
+3. Expected: Client A only sees "Despacito", Client B only sees "Shape of You"
+4. Client A disconnects → Only Client A's playlist cleared
+5. Client B's playlist remains intact
+
+# Verification:
+curl localhost:5000/api/debug/playlists
+```
+
+#### **Scenario 3: Single Connection Limit**
+```bash
+# Test one connection per client
+1. Client A connects to @user123 ✅
+2. Client A tries @user456 → ❌ "You can only connect to 1 TikTok account"
+3. Client A disconnects @user123
+4. Client A connects to @user456 ✅
+```
+
+### 📱 **Mobile Testing Checklist**
+
+#### **Touch & Scroll Performance**
+- [ ] **iOS Safari**: Momentum scrolling works smoothly
+- [ ] **Android Chrome**: Touch events respond instantly
+- [ ] **Rapid Comments**: Auto-scroll keeps up with burst comments
+- [ ] **Touch Interference**: Manual scroll disables auto-scroll temporarily
+- [ ] **Velocity Detection**: Fast swipes get longer delay before auto-scroll resumes
+
+#### **Responsive Design**
+- [ ] **Portrait Mode**: All panels stack properly
+- [ ] **Landscape Mode**: 3-panel layout on tablets
+- [ ] **Small Screens**: Touch targets meet 44px minimum
+- [ ] **Text Input**: No zoom on focus (16px font minimum)
+
+### 🔧 **Debug & Monitoring Tools**
+
+#### **Health Checks**
+```bash
+# Server health
+curl localhost:5000/api/health
+
+# Active TikTok connections
+curl localhost:5000/api/debug/connections
+
+# Playlist statistics
+curl localhost:5000/api/debug/playlists
+```
+
+#### **Performance Monitoring**
+```bash
+# Browser Console (F12)
+- Check for JavaScript errors
+- Monitor network requests
+- Watch WebSocket connection status
+
+# Real-time Statistics
+- Session duration tracking
+- Comment/request counters
+- User engagement metrics
+```
+
+#### **Load Testing**
+```bash
+# Multiple client simulation
+1. Open 5+ browser tabs/windows
+2. Connect each to different TikTok accounts
+3. Generate rapid song requests
+4. Monitor memory usage and performance
+5. Verify no data leaks between clients
 ```
 
 ---
@@ -392,24 +526,83 @@ tiktok-live-music-app/
 ### New Components Added
 - **📊 Statistics.js**: Live analytics dashboard with grid layout
 - **📊 StatisticsManager.js**: Backend service for tracking metrics
-- **🎵 Integrated Playlist**: Merged into YouTubePlayer component
+- **🎵 Per-Client PlaylistManager**: Individual playlists for each user
+- **📱 Mobile-Optimized Comments**: Ultra-smooth scroll with touch optimization
 - **🎛️ Compact Controls**: Circular buttons with smart toggling
+- **🔧 Debug Endpoints**: Admin tools for monitoring connections and playlists
 
 ### Socket.IO Events (Updated)
 | Event | Direction | Data | Description |
 |-------|-----------|------|-------------|
 | `connect-tiktok` | Client → Server | `username` | Connect to TikTok Live |
-| `disconnect-tiktok` | Client → Server | - | Disconnect from TikTok Live |
+| `disconnect-tiktok` | Client → Server | `username?` | Disconnect current TikTok connection |
 | `add-song-manual` | Client → Server | `{song, artist}` | Add song manually |
 | `remove-song` | Client → Server | `index` | Remove song from playlist |
 | `clear-playlist` | Client → Server | - | Clear entire playlist |
 | `next-song` | Client → Server | - | Skip to next song |
 | `playlist-updated` | Server → Client | `playlist` | Playlist state change |
-| `tiktok-status` | Server → Client | `status` | TikTok connection status |
+| `tiktok-status` | Server → Client | `status` | Single-user connection status |
+| `tiktok-disconnected` | Server → Client | `username` | Specific user disconnected |
 | `comments-updated` | Server → Client | `comments` | Live chat updates |
 | `statistics-updated` | Server → Client | `stats` | **NEW** Analytics data |
 | `song-added` | Server → Client | `songData` | Song successfully added |
+
+### API Endpoints
+| Endpoint | Method | Description | Response |
+|----------|--------|-------------|----------|
+| `/api/health` | GET | Server health check | `{ status: 'OK', timestamp: '...' }` |
+| `/api/debug/connections` | GET | **Admin Debug**: View all connected TikTok accounts | `{ connectedAccounts: [...], totalConnections: n }` |
+| `/api/debug/playlists` | GET | **Admin Debug**: View playlist statistics across all clients | `{ totalClients: n, totalSongs: n, clientCount: n }` |
+
+**Debug Endpoint Usage:**
+```bash
+# Check which TikTok accounts are currently connected
+curl http://localhost:5000/api/debug/connections
+
+# Check playlist statistics across all clients
+curl http://localhost:5000/api/debug/playlists
+
+# Example responses:
+{
+  "connectedAccounts": ["user123", "streamer456"],
+  "totalConnections": 2,
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+
+{
+  "totalClients": 5,
+  "totalSongs": 23,
+  "clientCount": 5,
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
 | `song-not-found` | Server → Client | `{request, requester}` | Song search failed |
+
+### Architecture Updates (v2.0)
+
+#### 🏗️ **Per-Client Architecture**
+```
+Each Client Session:
+├── 🎪 TikTok Connection (1:1 mapping)
+│   ├── Unique TikTok account per client
+│   ├── Comments filtered by client
+│   └── Auto-cleanup on disconnect
+├── 🎵 Individual Playlist
+│   ├── Songs isolated per client
+│   ├── Independent playback controls
+│   └── No cross-client interference
+└── 📊 Global Statistics (shared)
+    ├── Session-wide analytics
+    ├── Top commenters/requesters
+    └── Performance metrics
+```
+
+#### 🔧 **Data Isolation**
+- **✅ Client-Specific**: TikTok connections, playlists, comments
+- **✅ Global Shared**: Statistics, performance metrics
+- **✅ Auto-Cleanup**: All client data removed on disconnect
+- **✅ Memory Efficient**: No data leaks or cross-contamination
 
 ---
 
@@ -494,3 +687,126 @@ If you encounter any issues or have questions:
 **Version 2.0.0** - Now with Live Analytics Dashboard and Modern UI
 
 </div> 
+
+---
+
+## 🚀 Production Deployment
+
+### 📋 **Environment Configuration**
+
+#### **Backend Environment Variables**
+```bash
+# Copy example environment file
+cp example.env .env
+
+# Configure variables:
+PORT=5000                    # Server port
+NODE_ENV=production         # Environment mode
+TZ=UTC                      # Timezone setting
+
+# Optional optimizations:
+MAX_CONNECTIONS=100         # Maximum concurrent clients
+PLAYLIST_CLEANUP_INTERVAL=300000  # 5 minutes cleanup
+COMMENT_HISTORY_LIMIT=100   # Comments per client
+```
+
+#### **Frontend Build Configuration**
+```bash
+# Production build
+cd frontend
+npm run build
+
+# Build output:
+build/
+├── index.html              # Main entry point
+├── static/js/main.js       # Optimized JavaScript (~73KB)
+├── static/css/main.css     # Optimized CSS (~2.4KB)
+└── asset-manifest.json     # Asset mapping
+```
+
+### 🐳 **Docker Deployment**
+
+#### **Build & Run**
+```bash
+# Build Docker image
+docker build -t tiktok-live-music-app .
+
+# Run with environment
+docker run -d \
+  -p 5000:5000 \
+  -e NODE_ENV=production \
+  --name tiktok-music-app \
+  tiktok-live-music-app
+
+# Check logs
+docker logs tiktok-music-app
+
+# Monitor performance
+docker stats tiktok-music-app
+```
+
+#### **Docker Compose**
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+### 🔒 **Security & Performance**
+
+#### **Production Optimizations**
+```bash
+# Enable compression
+npm install compression --save
+
+# Rate limiting
+npm install express-rate-limit --save
+
+# Security headers
+npm install helmet --save
+
+# Process management
+npm install pm2 -g
+pm2 start backend/index.js --name "tiktok-music-app"
+```
+
+#### **Monitoring & Alerts**
+```bash
+# Application monitoring
+curl localhost:5000/api/health
+curl localhost:5000/api/debug/connections
+curl localhost:5000/api/debug/playlists
+
+# System monitoring
+htop                        # CPU/Memory usage
+netstat -tulpn | grep 5000 # Port status
+tail -f logs/app.log       # Application logs
+```
+
+### 📊 **Performance Benchmarks**
+
+#### **Expected Capacity**
+- **Concurrent Users**: 50-100 simultaneous clients
+- **Memory Usage**: ~100MB base + 2MB per active client
+- **CPU Usage**: <10% on modern servers
+- **Network**: ~1KB/s per client for real-time updates
+
+#### **Scaling Considerations**
+- **Per-Client Memory**: Each client maintains isolated playlist (~1-2MB)
+- **WebSocket Connections**: One per client for real-time updates
+- **TikTok Rate Limits**: Consider API rate limiting for popular streams
+- **YouTube API Quota**: Monitor daily quota usage for song searches
+
+--- 

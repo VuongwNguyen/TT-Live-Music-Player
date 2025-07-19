@@ -150,23 +150,6 @@ const YouTubePlayer = ({ socket, currentSong, playlist }) => {
     }
   };
 
-  const getPlayerStateDisplay = () => {
-    switch (playerState) {
-      case 'playing':
-        return '▶️ Playing';
-      case 'paused':
-        return '⏸️ Paused';
-      case 'buffering':
-        return '⏳ Buffering';
-      case 'ended':
-        return '⏹️ Ended';
-      case 'cued':
-        return '⏸️ Ready';
-      default:
-        return '⏹️ Stopped';
-    }
-  };
-
   const formatDuration = (duration) => {
     if (!duration) return '';
     return ` (${duration})`;

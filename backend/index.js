@@ -32,20 +32,24 @@ const tiktokManager = new TikTokManager(io, playlistManager, youtubeManager, sta
 
 // Socket.IO connection
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
-  // Send current state to new client
-  socket.emit('playlist-updated', playlistManager.getPlaylist());
-  socket.emit('tiktok-status', tiktokManager.getStatus());
+  // Send initial data to client
+  socket.emit('tiktok-status', tiktokManager.getClientStatus(socket.id));
   socket.emit('statistics-updated', statisticsManager.getStatistics());
+  socket.emit('playlist-updated', playlistManager.getPlaylist(socket.id));
   
+  // Send comments for this client
+  const clientComments = tiktokManager.getComments().filter(c => c.clientId === socket.id);
+  socket.emit('comments-updated', clientComments);
+  
+  console.log('Client connected:', socket.id);
+
   // Handle TikTok connection
   socket.on('connect-tiktok', (username) => {
-    tiktokManager.connect(username);
+    tiktokManager.connect(username, socket.id);
   });
   
-  socket.on('disconnect-tiktok', () => {
-    tiktokManager.disconnect();
+  socket.on('disconnect-tiktok', (username = null) => {
+    tiktokManager.disconnect(socket.id, username);
   });
   
   // Handle manual song addition
@@ -62,9 +66,18 @@ io.on('connection', (socket) => {
           thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
           channel: 'YouTube'
         };
-        playlistManager.addSong(newSong);
+        playlistManager.addSong(newSong, socket.id);
         statisticsManager.addSongPlayed(newSong);
-        io.emit('playlist-updated', playlistManager.getPlaylist());
+        
+        // Emit only to this client
+        socket.emit('playlist-updated', playlistManager.getPlaylist(socket.id));
+        socket.emit('song-added', {
+          song: newSong,
+          requester: 'Manual',
+          originalRequest: `${song} - ${artist}`
+        });
+        
+        // Global statistics still broadcast
         io.emit('statistics-updated', statisticsManager.getStatistics());
       } else {
         socket.emit('error', 'Could not find song');
@@ -77,72 +90,69 @@ io.on('connection', (socket) => {
   
   // Handle playlist controls
   socket.on('remove-song', (index) => {
-    playlistManager.removeSong(index);
-    io.emit('playlist-updated', playlistManager.getPlaylist());
-  });
-  
-  socket.on('clear-playlist', () => {
-    playlistManager.clearPlaylist();
-    statisticsManager.resetStreak();
-    io.emit('playlist-updated', playlistManager.getPlaylist());
-    io.emit('statistics-updated', statisticsManager.getStatistics());
-  });
-  
-  socket.on('next-song', () => {
-    playlistManager.nextSong();
-    io.emit('playlist-updated', playlistManager.getPlaylist());
-    io.emit('play-next');
-  });
-  
-  // Quick add test songs
-  socket.on('quick-add', async (songName) => {
     try {
-      let song, artist;
-      switch(songName) {
-        case 'despacito':
-          song = 'Despacito';
-          artist = 'Luis Fonsi';
-          break;
-        case 'shape':
-          song = 'Shape of You';
-          artist = 'Ed Sheeran';
-          break;
-        case 'gangnam':
-          song = 'Gangnam Style';
-          artist = 'PSY';
-          break;
-        default:
-          return;
-      }
-      
-      const videoId = await youtubeManager.searchSong(song, artist);
-      if (videoId) {
-        const newSong = {
-          videoId,
-          title: `${song} - ${artist}`,
-          requester: 'Quick Add',
-          duration: null,
-          thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
-          channel: 'YouTube'
-        };
-        playlistManager.addSong(newSong);
-        statisticsManager.addSongPlayed(newSong);
-        io.emit('playlist-updated', playlistManager.getPlaylist());
-        io.emit('statistics-updated', statisticsManager.getStatistics());
-      }
+      playlistManager.removeSong(index, socket.id);
+      socket.emit('playlist-updated', playlistManager.getPlaylist(socket.id));
     } catch (error) {
-      socket.emit('error', 'Failed to quick add song');
+      console.error('Error removing song:', error);
+      socket.emit('error', 'Failed to remove song');
     }
   });
   
+  socket.on('clear-playlist', () => {
+    try {
+      playlistManager.clearPlaylist(socket.id);
+      socket.emit('playlist-updated', playlistManager.getPlaylist(socket.id));
+    } catch (error) {
+      console.error('Error clearing playlist:', error);
+      socket.emit('error', 'Failed to clear playlist');
+    }
+  });
+  
+  socket.on('next-song', () => {
+    try {
+      playlistManager.nextSong(socket.id);
+      socket.emit('playlist-updated', playlistManager.getPlaylist(socket.id));
+      socket.emit('play-next');
+    } catch (error) {
+      console.error('Error going to next song:', error);
+      socket.emit('error', 'Failed to go to next song');
+    }
+  });
+
+  // Client disconnect cleanup
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+    
+    // Clean up TikTok connections for this client
+    tiktokManager.handleClientDisconnect(socket.id);
+    
+    // Clean up client's playlist
+    playlistManager.removeClientPlaylist(socket.id);
   });
 });
 
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint to check global TikTok connections
+app.get('/api/debug/connections', (req, res) => {
+  const globalConnections = tiktokManager.getGlobalConnections();
+  res.json({
+    ...globalConnections,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Debug endpoint to check playlist statistics
+app.get('/api/debug/playlists', (req, res) => {
+  const playlistStats = playlistManager.getStats();
+  res.json({
+    ...playlistStats,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Serve React app

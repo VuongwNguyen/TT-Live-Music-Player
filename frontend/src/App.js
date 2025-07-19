@@ -75,7 +75,21 @@ function App() {
     });
 
     newSocket.on('tiktok-error', (data) => {
-      addNotification(`TikTok Error: ${data.error}`, 'error');
+      const isAlreadyConnected = data.code === 'ALREADY_CONNECTED';
+      const isSingleLimit = data.code === 'SINGLE_CONNECTION_LIMIT';
+      
+      let notificationType = 'error';
+      let prefix = 'TikTok Error';
+      
+      if (isAlreadyConnected) {
+        notificationType = 'warning';
+        prefix = '⚠️ Already Connected';
+      } else if (isSingleLimit) {
+        notificationType = 'warning';
+        prefix = '⚠️ Connection Limit';
+      }
+      
+      addNotification(`${prefix}: ${data.error}`, notificationType);
     });
 
     newSocket.on('error', (error) => {
