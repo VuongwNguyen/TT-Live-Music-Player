@@ -76,8 +76,10 @@ class TikTokManager {
         // Add to global tracking
         this.globalConnections.set(username, socketId);
         
-        this.io.to(socketId).emit('tiktok-status', this.getClientStatus(socketId));
+        const status = this.getClientStatus(socketId);
+        this.io.to(socketId).emit('tiktok-status', status);
         this.io.to(socketId).emit('tiktok-connected', { username, state });
+        console.log(`Client ${socketId} TikTok connection established:`, status);
       }).catch(err => {
         console.error(`Client ${socketId} failed to connect to TikTok Live @${username}:`, err);
         this.io.to(socketId).emit('tiktok-error', { error: `Failed to connect to @${username}: ${err.message}` });
@@ -101,12 +103,18 @@ class TikTokManager {
     // Listen for connection state changes
     connection.on('connected', () => {
       console.log(`Client ${socketId} TikTok Live @${username} connected successfully`);
-      this.io.to(socketId).emit('tiktok-status', this.getClientStatus(socketId));
+      const status = this.getClientStatus(socketId);
+      this.io.to(socketId).emit('tiktok-status', status);
+      console.log(`Client ${socketId} status after TikTok connection:`, status);
     });
 
     connection.on('disconnected', () => {
       console.log(`Client ${socketId} TikTok Live @${username} disconnected`);
       this.handleUserDisconnected(username, socketId);
+      // Emit updated status after disconnect
+      const status = this.getClientStatus(socketId);
+      this.io.to(socketId).emit('tiktok-status', status);
+      console.log(`Client ${socketId} status after TikTok disconnect:`, status);
     });
 
     connection.on('error', (error) => {
@@ -357,6 +365,7 @@ class TikTokManager {
 
   getClientStatus(socketId) {
     if (!this.clientConnections.has(socketId)) {
+      console.log(`Client ${socketId} status: Not connected`);
       return {
         isConnected: false,
         connectedUsers: [],
@@ -368,12 +377,15 @@ class TikTokManager {
     const clientConns = this.clientConnections.get(socketId);
     const clientComments = this.comments.filter(c => c.clientId === socketId);
     
-    return {
+    const status = {
       isConnected: clientConns.size > 0,
       connectedUsers: Array.from(clientConns.keys()),
       totalConnections: clientConns.size,
       commentsCount: clientComments.length
     };
+    
+    console.log(`Client ${socketId} status:`, status);
+    return status;
   }
 
   // Method to clean up when client disconnects

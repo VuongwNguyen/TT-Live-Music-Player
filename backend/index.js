@@ -14,8 +14,11 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
+    origin: process.env.NODE_ENV === 'production' 
+      ? ["https://your-app-name.vercel.app", "https://your-app-name.vercel.app:443"]
+      : "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -169,6 +172,10 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Frontend: http://localhost:3000`);
-  console.log(`Backend: http://localhost:${PORT}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`Production mode - App deployed on Vercel`);
+  } else {
+    console.log(`Frontend: http://localhost:3000`);
+    console.log(`Backend: http://localhost:${PORT}`);
+  }
 }); 

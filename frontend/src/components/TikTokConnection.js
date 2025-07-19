@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TikTokConnection = ({ socket, status }) => {
   const [username, setUsername] = useState('');
@@ -11,10 +11,9 @@ const TikTokConnection = ({ socket, status }) => {
     setIsConnecting(true);
     socket.emit('connect-tiktok', username.trim());
 
-    // Reset connecting state and clear input after a delay
+    // Reset connecting state after a delay
     setTimeout(() => {
       setIsConnecting(false);
-      setUsername(''); // Clear input after successful connection
     }, 3000);
   };
 
@@ -22,6 +21,13 @@ const TikTokConnection = ({ socket, status }) => {
     if (!socket) return;
     socket.emit('disconnect-tiktok', username);
   };
+
+  // Clear input when successfully connected
+  useEffect(() => {
+    if (status.isConnected && status.connectedUsers && status.connectedUsers.length > 0) {
+      setUsername('');
+    }
+  }, [status.isConnected, status.connectedUsers]);
 
 
 
@@ -67,7 +73,7 @@ const TikTokConnection = ({ socket, status }) => {
       )}
 
       {/* Show connected users */}
-      {status.isConnected && (
+      {status.isConnected && status.connectedUsers && status.connectedUsers.length > 0 && (
         <div className="connected-users">
           <div className="current-connection">
             <div className="connection-header">
@@ -90,8 +96,6 @@ const TikTokConnection = ({ socket, status }) => {
               <p><strong>Comments:</strong> {status.commentsCount || 0}</p>
             </div>
           </div>
-
-
         </div>
       )}
 

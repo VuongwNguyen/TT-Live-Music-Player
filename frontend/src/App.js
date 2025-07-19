@@ -12,7 +12,12 @@ function App() {
   const [socket, setSocket] = useState(null);
   const [playlist, setPlaylist] = useState({ songs: [], currentIndex: 0, currentSong: null });
   const [comments, setComments] = useState([]);
-  const [tiktokStatus, setTiktokStatus] = useState({ isConnected: false, username: null });
+  const [tiktokStatus, setTiktokStatus] = useState({ 
+    isConnected: false, 
+    connectedUsers: [],
+    totalConnections: 0,
+    commentsCount: 0
+  });
   const [notifications, setNotifications] = useState([]);
   const [statistics, setStatistics] = useState({
     topCommenter: null,
@@ -30,12 +35,21 @@ function App() {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io('http://localhost:5000');
+    const serverUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin 
+      : 'http://localhost:5000';
+    const newSocket = io(serverUrl);
     setSocket(newSocket);
 
     // Socket event listeners
     newSocket.on('connect', () => {
       console.log('Connected to server');
+      addNotification('Connected to server', 'success');
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      addNotification('Disconnected from server', 'error');
     });
 
     newSocket.on('playlist-updated', (playlistData) => {
@@ -47,6 +61,7 @@ function App() {
     });
 
     newSocket.on('tiktok-status', (status) => {
+      console.log('TikTok status updated:', status);
       setTiktokStatus(status);
     });
 
@@ -71,10 +86,12 @@ function App() {
     });
 
     newSocket.on('tiktok-connected', (data) => {
+      console.log('TikTok connected:', data);
       addNotification(`Connected to @${data.username}`, 'success');
     });
 
     newSocket.on('tiktok-error', (data) => {
+      console.log('TikTok error:', data);
       const isAlreadyConnected = data.code === 'ALREADY_CONNECTED';
       const isSingleLimit = data.code === 'SINGLE_CONNECTION_LIMIT';
       
