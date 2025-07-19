@@ -1,0 +1,167 @@
+version: '3.8'
+
+# =====================================
+# TikTok Live Music Player - Development Override
+# =====================================
+
+services:
+  # =====================================
+  # Development Application
+  # =====================================
+  tiktok-music-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    image: tiktok-live-music:dev
+    container_name: tiktok-music-app-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DEBUG_MODE=true
+      - ENABLE_HOT_RELOAD=true
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app/backend
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+      # Node modules (avoid mounting to preserve containers)
+      - backend-node-modules:/app/backend/node_modules
+      - frontend-node-modules:/app/frontend/node_modules
+    ports:
+      - "5000:5000"  # Backend
+      - "3000:3000"  # Frontend dev server
+    command: yarn dev
+    depends_on:
+      - redis-dev
+    profiles:
+      - dev
+
+  # =====================================
+  # Development Frontend (Separate)
+  # =====================================
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    image: tiktok-music-frontend:dev
+    container_name: tiktok-music-frontend-dev
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:5000
+      - REACT_APP_WS_URL=ws://localhost:5000
+      - FAST_REFRESH=true
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    command: yarn start
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev-separate
+
+  # =====================================
+  # Development Backend
+  # =====================================
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    image: tiktok-music-backend:dev
+    container_name: tiktok-music-backend-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DEBUG_MODE=true
+    volumes:
+      - ./backend:/app
+      - backend-node-modules:/app/node_modules
+    ports:
+      - "5000:5000"
+      - "9229:9229"  # Node debugger
+    command: yarn dev:debug
+    depends_on:
+      - redis-dev
+    profiles:
+      - dev-separate
+
+  # =====================================
+  # Development Redis
+  # =====================================
+  redis-dev:
+    image: redis:7-alpine
+    container_name: tiktok-music-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    command: redis-server --appendonly yes
+    profiles:
+      - dev
+      - dev-separate
+
+  # =====================================
+  # Development Database (Optional)
+  # =====================================
+  mongo-dev:
+    image: mongo:5
+    container_name: tiktok-music-mongo-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=tiktok_music_dev
+    volumes:
+      - mongo-dev-data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    profiles:
+      - dev-with-db
+
+# =====================================
+# Development Volumes
+# =====================================
+volumes:
+  backend-node-modules:
+    driver: local
+    name: tiktok-music-backend-dev-modules
+  frontend-node-modules:
+    driver: local
+    name: tiktok-music-frontend-dev-modules
+  redis-dev-data:
+    driver: local
+    name: tiktok-music-redis-dev
+  mongo-dev-data:
+    driver: local
+    name: tiktok-music-mongo-dev
+
+# =====================================
+# Development Usage
+# =====================================
+
+# Start development environment:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev up
+
+# Start with separate frontend/backend:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-separate up
+
+# Start with database:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile dev-with-db up
+
+# Debug mode:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec backend-dev yarn dev:debug
+
+# View logs:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
+
+# Shell access:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec tiktok-music-app-dev sh
+
+# Install dependencies:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec tiktok-music-app-dev yarn install
+
+# Cleanup dev environment:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v 
